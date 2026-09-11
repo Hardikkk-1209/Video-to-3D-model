@@ -1,0 +1,9 @@
+# local OS/editor files
+.DS_Store
+.vscode/
+.idea/
+
+# local test files
+*.mov
+*.mp4
+*.webm
