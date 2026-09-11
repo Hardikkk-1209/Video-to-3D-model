@@ -3,67 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MeshForge — Video to 3D</title>
-  <meta name="description" content="Futuristic WebODM-inspired video to 3D model prototype." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta name="theme-color" content="#071116" />
+  <title>MeshForge — Reconstruction Studio</title>
+  <meta name="description" content="MeshForge flight reconstruction and 3D visualization studio." />
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.module.js"}}</script>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">M</span><span>MeshForge</span></div>
-      <div class="sidebar-section"><div class="section-label">WORKSPACE</div><button class="nav-item active"><span>▣</span> Reconstruction</button><button class="nav-item"><span>◈</span> Projects</button><button class="nav-item"><span>⌁</span> Processing Queue</button></div>
-      <div class="sidebar-section"><div class="section-label">TOOLS</div><button class="nav-item"><span>◌</span> Map View</button><button class="nav-item"><span>◇</span> Export</button></div>
-      <div class="sidebar-footer"><div class="status-dot"></div><div><strong>Prototype node</strong><small>simulation online</small></div></div>
-    </aside>
-    <main class="main">
-      <header class="topbar"><div><div class="eyebrow">PROJECT / DEMO-TASK</div><h1>Video Reconstruction Studio</h1></div><div class="top-actions"><span class="chip">WEBODM MODE</span><button id="themeToggle" class="icon-btn" title="Toggle theme">☼</button><button class="avatar">H</button></div></header>
-      <section class="workspace-grid">
-        <section class="panel controls-panel">
-          <div class="panel-header"><div><div class="panel-kicker">01 / INPUT</div><h2>Capture source</h2></div><span class="badge" id="inputBadge">READY</span></div>
-          <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Choose flight video">
-            <input id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v,.webm" hidden />
-            <div class="upload-icon" id="uploadIcon">↑</div><video id="videoPreview" class="video-preview" controls muted playsinline hidden></video>
-            <strong id="uploadTitle">Drop flight video here</strong><span id="uploadMeta">or click to browse · MP4, MOV, WEBM</span>
-            <button type="button" class="browse-btn" id="browseVideoBtn">Choose Video</button><div class="file-pill" id="filePill">No file selected</div>
-          </div>
-          <div class="panel-header compact"><div><div class="panel-kicker">02 / PARAMETERS</div><h2>Processing options</h2></div><span class="tiny-status">SIMULATED</span></div>
-          <div class="param-list">
-            <label class="param-row"><span><b>Camera model</b><small>Sensor / lens profile</small></span><select><option>Auto detected</option><option>DJI Mavic 3</option><option>Generic 24mm</option></select></label>
-            <label class="param-row"><span><b>Iterations</b><small>Optimization passes</small></span><input id="iterations" type="number" value="15000" min="1000" max="50000" step="500" /></label>
-            <label class="param-row"><span><b>Feature quality</b><small>Keypoint density</small></span><select><option>High</option><option>Medium</option><option>Ultra</option></select></label>
-            <label class="param-row"><span><b>Resize images</b><small>Input resolution scaling</small></span><select><option>No</option><option>2048 px</option><option>1024 px</option></select></label>
-            <label class="param-row"><span><b>Depth refinement</b><small>Surface precision</small></span><div class="switch on" data-toggle><i></i></div></label>
-            <label class="param-row"><span><b>Texture atlas</b><small>Material detail</small></span><div class="switch on" data-toggle><i></i></div></label>
-          </div>
-          <button id="processBtn" class="primary-btn" disabled><span>◌</span> Waiting for video</button>
-          <div class="process-note"><span class="pulse"></span> Demo mode: the 17:30 pipeline is simulated; your uploaded video is not processed.</div>
-        </section>
-        <section class="viewer-panel">
-          <div class="viewer-toolbar"><div><div class="panel-kicker">03 / OUTPUT</div><h2>Reconstruction viewport</h2></div><div class="viewer-tools"><button id="resetView">Reset</button><button id="wireToggle">Wireframe</button><button id="fullscreenBtn">Fullscreen</button><a id="downloadBtn" class="download-btn" href="model1.glb" download="MeshForge-Reconstruction.glb" hidden>Download GLB</a></div></div>
-          <div id="viewer" class="viewer">
-            <div class="output-placeholder" id="outputPlaceholder"><div class="placeholder-icon">◇</div><strong id="placeholderTitle">3D output is waiting</strong><span id="placeholderText">Upload a flight video to start the reconstruction pipeline.</span></div>
-            <div class="processing-screen" id="processingScreen" hidden>
-              <div class="processing-orb"><span></span></div>
-              <div class="processing-label">RECONSTRUCTION PIPELINE</div>
-              <div class="countdown" id="countdown">17:30</div>
-              <div class="processing-stage" id="processingStage">Initializing pipeline…</div>
-              <div class="processing-detail" id="processingDetail">Preparing image sequence and camera solution</div>
-              <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
-              <div class="progress-meta"><span id="progressPercent">0%</span><span id="pipelineTime">17:30 remaining</span></div>
-              <div class="buzz-list" id="buzzList"><span>Pipeline queued</span><span>Camera calibration</span><span>Feature extraction</span></div>
-            </div>
-            <div class="loading" id="modelLoading" hidden><div class="spinner"></div><span>Loading fixed reconstruction…</span></div>
-          </div>
-          <div class="viewer-hints"><span>Drag · Orbit 360°</span><span>Scroll · Zoom</span><span>Shift + Drag · Pan</span><span>Double-click · Focus</span></div>
-          <div class="output-footer"><div><span class="metric-label">MODEL</span><strong>Fixed demo reconstruction</strong></div><div><span class="metric-label">FORMAT</span><strong>GLB · 4K textures</strong></div><div><span class="metric-label">STATUS</span><strong class="online" id="modelStatus">● WAITING</strong></div></div>
-        </section>
-      </section>
-    </main>
+<div class="app-shell">
+<aside class="sidebar">
+  <div class="brand"><span class="brand-mark">M</span><span>MeshForge</span><span class="brand-version">PRO</span></div>
+  <div class="project-mini"><span class="project-dot"></span><div><b>DEMO-TASK</b><small>Reconstruction project</small></div><button id="projectMenuBtn" class="mini-icon">•••</button></div>
+  <nav class="sidebar-nav">
+    <div class="section-label">WORKSPACE</div>
+    <button class="nav-item active" data-workspace="reconstruction"><span class="nav-icon">▣</span><span>Reconstruction</span><kbd>⌘1</kbd></button>
+    <button class="nav-item" data-workspace="projects"><span class="nav-icon">◇</span><span>Projects</span><kbd>⌘2</kbd></button>
+    <button class="nav-item" data-workspace="queue"><span class="nav-icon">⌁</span><span>Processing Queue</span><span class="nav-count">1</span></button>
+    <div class="section-label tools-label">TOOLS</div>
+    <button class="nav-item" data-workspace="map"><span class="nav-icon">◌</span><span>Map View</span></button>
+    <button class="nav-item" data-workspace="export"><span class="nav-icon">⇩</span><span>Export</span></button>
+  </nav>
+  <div class="sidebar-footer"><div class="status-dot"></div><div><strong>Prototype node</strong><small>Simulation online · local</small></div><span class="latency">24ms</span></div>
+</aside>
+<main class="main">
+<header class="topbar"><div class="title-block"><div class="eyebrow">PROJECT / DEMO-TASK <span>•</span> LOCAL NODE</div><h1>Video Reconstruction Studio</h1></div><div class="top-actions"><div class="system-status"><span></span> SYSTEM ONLINE</div><button id="themeToggle" class="icon-btn" title="Toggle theme">☼</button><div class="profile-wrap"><button id="profileBtn" class="avatar">H</button><div id="profileMenu" class="profile-menu" hidden><b>Hardikk</b><span>Prototype operator</span><button id="aboutBtn">About MeshForge</button></div></div></div></header>
+<section class="workspace-grid">
+<section class="panel controls-panel">
+  <div class="panel-header"><div><div class="panel-kicker">01 / INPUT</div><h2>Capture source</h2></div><span class="badge" id="inputBadge">READY</span></div>
+  <div class="upload-zone" id="uploadZone" role="button" tabindex="0"><input id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v,.webm" hidden /><div class="upload-icon" id="uploadIcon">↑</div><video id="videoPreview" class="video-preview" controls muted playsinline hidden></video><div class="upload-copy"><strong id="uploadTitle">Drop flight video here</strong><span id="uploadMeta">or click to browse · MP4, MOV, WEBM</span></div><button type="button" class="browse-btn" id="browseVideoBtn">Choose Video</button><div class="file-pill" id="filePill">No file selected</div></div>
+  <div class="panel-header compact"><div><div class="panel-kicker">02 / PARAMETERS</div><h2>Processing options</h2></div><span class="tiny-status">SIMULATED</span></div>
+  <div class="param-list">
+    <label class="param-row"><span><b>Camera model</b><small>Sensor / lens profile</small></span><select id="cameraModel"><option>Auto detected</option><option>DJI Mavic 3</option><option>DJI Air 3</option><option>Generic 24mm</option></select></label>
+    <label class="param-row"><span><b>Iterations</b><small>Optimization passes</small></span><input id="iterations" type="number" value="15000" min="1000" max="50000" step="500" /></label>
+    <label class="param-row"><span><b>Feature quality</b><small>Keypoint density</small></span><select id="featureQuality"><option>High</option><option>Medium</option><option>Ultra</option></select></label>
+    <label class="param-row"><span><b>Resize images</b><small>Input resolution scaling</small></span><select id="resizeImages"><option>No</option><option>2048 px</option><option>1024 px</option></select></label>
+    <label class="param-row"><span><b>Depth refinement</b><small>Surface precision</small></span><button class="switch on" data-toggle aria-label="Toggle depth refinement"><i></i></button></label>
+    <label class="param-row"><span><b>Texture atlas</b><small>Material detail</small></span><button class="switch on" data-toggle aria-label="Toggle texture atlas"><i></i></button></label>
   </div>
-  <script src="video-upload-fix.js"></script><script type="module" src="app.js"></script>
-</body>
-</html>
+  <button id="processBtn" class="primary-btn" disabled><span>◌</span> Waiting for video</button><div class="process-note"><span class="pulse"></span><span>Demo mode · parameters are interactive, output is a fixed reconstruction.</span></div>
+</section>
+<section class="viewer-panel">
+  <div class="viewer-toolbar"><div><div class="panel-kicker">03 / OUTPUT</div><h2>Reconstruction viewport</h2><div class="viewport-subtitle" id="viewportSubtitle">Perspective · PBR material · Real-time</div></div><div class="viewer-tools"><button id="viewHome">Home</button><button id="resetView">Reset</button><button id="wireToggle">Wireframe</button><button id="gridToggle">Grid</button><button id="fullscreenBtn">Fullscreen</button><a id="downloadBtn" class="download-btn" href="model1.glb" download="MeshForge-Reconstruction.glb" hidden>⇩ Download GLB</a></div></div>
+  <div id="viewer" class="viewer"><div class="viewport-corner top-left"><span>3D</span><small>SCENE</small></div><div class="viewport-corner top-right"><span id="cameraReadout">PERSPECTIVE</span><small>CAMERA</small></div>
+    <div class="output-placeholder" id="outputPlaceholder"><div class="placeholder-icon">◇</div><strong id="placeholderTitle">3D output is waiting</strong><span id="placeholderText">Upload a flight video to initialize the reconstruction pipeline.</span></div>
+    <div class="processing-screen" id="processingScreen" hidden><div class="processing-orb"><span></span><i></i></div><div class="processing-label">RECONSTRUCTION PIPELINE</div><div class="countdown" id="countdown">17:30</div><div class="processing-stage" id="processingStage">Initializing pipeline…</div><div class="processing-detail" id="processingDetail">Preparing image sequence and camera solution</div><div class="progress-track"><div class="progress-bar" id="progressBar"></div></div><div class="progress-meta"><span id="progressPercent">0%</span><span id="pipelineTime">17:30 remaining</span></div><div class="buzz-list" id="buzzList"><span>PIPELINE QUEUED</span><span>CAMERA CALIBRATION</span><span>FEATURE EXTRACTION</span></div></div>
+    <div class="loading" id="modelLoading" hidden><div class="spinner"></div><span>Loading fixed reconstruction…</span></div><div class="view-gizmo"><span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span><div></div></div>
+  </div>
+  <div class="viewer-hints"><span>◐ Drag <em>Orbit</em></span><span>◉ Scroll <em>Zoom</em></span><span>⇧ + Drag <em>Pan</em></span><span>⌂ Home <em>Frame model</em></span></div>
+  <div class="output-footer"><div><span class="metric-label">MODEL</span><strong id="modelName">Fixed demo reconstruction</strong></div><div><span class="metric-label">FORMAT</span><strong>GLB · 4K textures</strong></div><div><span class="metric-label">STATUS</span><strong class="online" id="modelStatus">● WAITING</strong></div></div>
+</section></section></main></div>
+<div class="toast" id="toast" hidden><span class="toast-icon">✓</span><div><b id="toastTitle">Done</b><small id="toastText">Action completed.</small></div></div>
+<div class="modal-backdrop" id="modalBackdrop" hidden><section class="workspace-modal" role="dialog" aria-modal="true"><button class="modal-close" id="modalClose">×</button><div class="modal-kicker" id="modalKicker">WORKSPACE</div><h2 id="modalTitle">Projects</h2><div id="modalBody"></div></section></div>
+<script type="module" src="app.js"></script>
+</body></html>
