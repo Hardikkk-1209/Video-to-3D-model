@@ -3,264 +3,160 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/exampl
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/environments/RoomEnvironment.js';
 
-const viewer = document.getElementById('viewer');
-const modelLoading = document.getElementById('modelLoading');
-const outputPlaceholder = document.getElementById('outputPlaceholder');
-const placeholderTitle = document.getElementById('placeholderTitle');
-const placeholderText = document.getElementById('placeholderText');
-const modelStatus = document.getElementById('modelStatus');
-const processBtn = document.getElementById('processBtn');
-const inputBadge = document.getElementById('inputBadge');
-const processingScreen = document.getElementById('processingScreen');
-const countdownEl = document.getElementById('countdown');
-const processingStage = document.getElementById('processingStage');
-const processingDetail = document.getElementById('processingDetail');
-const progressBar = document.getElementById('progressBar');
-const progressPercent = document.getElementById('progressPercent');
-const pipelineTime = document.getElementById('pipelineTime');
-const buzzList = document.getElementById('buzzList');
-const downloadBtn = document.getElementById('downloadBtn');
-const uploadZone = document.getElementById('uploadZone');
-const modelUrl = 'model1.glb';
-
-// Deliberately simulated: 17 minutes 30 seconds.
+const $ = (id) => document.getElementById(id);
+const viewer = $('viewer'), modelLoading = $('modelLoading'), outputPlaceholder = $('outputPlaceholder');
+const placeholderTitle = $('placeholderTitle'), placeholderText = $('placeholderText'), modelStatus = $('modelStatus');
+const processBtn = $('processBtn'), inputBadge = $('inputBadge'), processingScreen = $('processingScreen');
+const countdownEl = $('countdown'), processingStage = $('processingStage'), processingDetail = $('processingDetail');
+const progressBar = $('progressBar'), progressPercent = $('progressPercent'), pipelineTime = $('pipelineTime'), buzzList = $('buzzList');
+const downloadBtn = $('downloadBtn'), uploadZone = $('uploadZone'), videoInput = $('videoInput'), videoPreview = $('videoPreview');
+const uploadIcon = $('uploadIcon'), uploadTitle = $('uploadTitle'), uploadMeta = $('uploadMeta'), filePill = $('filePill');
 const PIPELINE_SECONDS = 17 * 60 + 30;
+const modelUrl = 'model1.glb';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 5000);
-camera.position.set(2.8, 1.6, 3.4);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
+renderer.setClearColor(0x000000, 0);
 viewer.appendChild(renderer.domElement);
 renderer.domElement.style.visibility = 'hidden';
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+pmrem.dispose();
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.06;
-controls.enablePan = true;
-controls.screenSpacePanning = true;
-controls.minDistance = 0.15;
-controls.maxDistance = 500;
-controls.target.set(0, 0, 0);
+controls.enableDamping = true; controls.dampingFactor = 0.055; controls.enablePan = true; controls.screenSpacePanning = true;
+controls.minDistance = 0.15; controls.maxDistance = 500; controls.target.set(0,0,0);
 
-const grid = new THREE.GridHelper(10, 20, 0x234250, 0x122832);
-grid.material.transparent = true;
-grid.material.opacity = 0.45;
-scene.add(grid);
-scene.add(new THREE.HemisphereLight(0xa9efff, 0x071018, 1.5));
-const key = new THREE.DirectionalLight(0xffffff, 2.4);
-key.position.set(4, 7, 5);
-scene.add(key);
-const rim = new THREE.PointLight(0x39ddff, 45, 20);
-rim.position.set(-4, 3, -2);
-scene.add(rim);
+const grid = new THREE.GridHelper(10, 20, 0x315564, 0x18303a);
+grid.material.transparent = true; grid.material.opacity = .42; scene.add(grid);
+scene.add(new THREE.HemisphereLight(0xa9efff, 0x071018, 1.55));
+const key = new THREE.DirectionalLight(0xffffff, 2.7); key.position.set(4,7,5); scene.add(key);
+const rim = new THREE.PointLight(0x39ddff, 40, 20); rim.position.set(-4,3,-2); scene.add(rim);
 
-let root = null;
-let modelReady = false;
-let modelLoadFailed = false;
-let processing = false;
-let processingCompleted = false;
-let countdownTimer = null;
-let countdownStartedAt = 0;
-let countdownEndAt = 0;
+let root = null, modelReady = false, modelLoadFailed = false, processing = false, processingCompleted = false;
+let countdownTimer = null, videoObjectUrl = null;
 
 const loader = new GLTFLoader();
-
-function hideLoading() {
-  modelLoading.hidden = true;
-  modelLoading.style.display = 'none';
-}
-function showLoading(message) {
-  modelLoading.hidden = false;
-  modelLoading.style.display = 'grid';
-  modelLoading.querySelector('span').textContent = message;
-}
-
 loader.load(modelUrl, (gltf) => {
   root = gltf.scene;
-  root.traverse((obj) => {
-    if (obj.isMesh) {
-      obj.castShadow = true;
-      obj.receiveShadow = true;
-      if (obj.material) obj.material.needsUpdate = true;
-    }
-  });
-  scene.add(root);
-  frameObject(root);
-  modelReady = true;
-  // The model is intentionally kept hidden until the simulated pipeline ends.
+  root.traverse((obj) => { if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; if (obj.material) obj.material.needsUpdate = true; } });
+  scene.add(root); frameObject(root); modelReady = true;
   if (processingCompleted) revealModel();
-}, undefined, (error) => {
-  console.error('Failed to load model1.glb:', error);
-  modelLoadFailed = true;
-  if (processingCompleted) showModelError();
-});
+}, undefined, (error) => { console.error('Failed to load model1.glb:', error); modelLoadFailed = true; if (processingCompleted) showModelError(); });
 
 function frameObject(object) {
-  const box = new THREE.Box3().setFromObject(object);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-  const maxSize = Math.max(size.x, size.y, size.z);
-  const fit = maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)));
-  camera.position.copy(center).add(new THREE.Vector3(fit * 0.75, fit * 0.45, fit * 1.05));
-  camera.near = Math.max(maxSize / 10000, 0.001);
-  camera.far = Math.max(maxSize * 100, 100);
-  camera.updateProjectionMatrix();
-  controls.target.copy(center);
-  controls.minDistance = Math.max(maxSize * 0.05, 0.01);
-  controls.maxDistance = Math.max(maxSize * 30, 100);
-  controls.update();
-  grid.scale.setScalar(Math.max(maxSize / 5, 1));
-  grid.position.y = box.min.y;
+  const box = new THREE.Box3().setFromObject(object), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  const maxSize = Math.max(size.x,size.y,size.z) || 1;
+  const fit = maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * .5)));
+  camera.position.copy(center).add(new THREE.Vector3(fit*.75, fit*.45, fit*1.05));
+  camera.near = Math.max(maxSize/10000,.001); camera.far = Math.max(maxSize*100,100); camera.updateProjectionMatrix();
+  controls.target.copy(center); controls.minDistance = Math.max(maxSize*.05,.01); controls.maxDistance = Math.max(maxSize*30,100); controls.update();
+  grid.scale.setScalar(Math.max(maxSize/5,1)); grid.position.y = box.min.y;
 }
-
-function revealModel() {
-  if (!modelReady || !processingCompleted) return;
-  hideLoading();
-  processingScreen.hidden = true;
-  processingScreen.style.display = 'none';
-  outputPlaceholder.style.display = 'none';
-  renderer.domElement.style.visibility = 'visible';
-  modelStatus.textContent = '● VIEW READY';
-  modelStatus.classList.add('online');
-  downloadBtn.hidden = false;
-  inputBadge.textContent = 'COMPLETE';
-  processBtn.disabled = false;
-  processBtn.classList.remove('processing');
-  processBtn.innerHTML = '<span>✓</span> Reconstruction Complete';
+function hideLoading(){ modelLoading.hidden=true; modelLoading.style.display='none'; }
+function showLoading(msg){ modelLoading.hidden=false; modelLoading.style.display='grid'; modelLoading.querySelector('span').textContent=msg; }
+function revealModel(){
+  if(!modelReady || !processingCompleted) return;
+  hideLoading(); processingScreen.hidden=true; processingScreen.style.display='none'; outputPlaceholder.style.display='none';
+  renderer.domElement.style.visibility='visible'; modelStatus.textContent='● VIEW READY'; modelStatus.classList.add('online'); downloadBtn.hidden=false; inputBadge.textContent='COMPLETE';
+  processBtn.disabled=false; processBtn.classList.remove('processing'); processBtn.innerHTML='<span>↻</span> Run Again'; toast('Reconstruction ready','3D output is ready to inspect and export.');
 }
+function showModelError(){ hideLoading(); processingScreen.hidden=true; outputPlaceholder.style.display='grid'; placeholderTitle.textContent='3D model could not be loaded'; placeholderText.textContent='model1.glb was not found or could not be read. Keep it beside index.html.'; modelStatus.textContent='● MODEL ERROR'; modelStatus.classList.remove('online'); }
+function formatTime(n){ n=Math.max(0,Math.ceil(n)); return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`; }
 
-function showModelError() {
-  hideLoading();
-  processingScreen.hidden = true;
-  outputPlaceholder.style.display = 'grid';
-  placeholderTitle.textContent = '3D model could not be loaded';
-  placeholderText.textContent = 'Make sure model1.glb is beside index.html.';
-  modelStatus.textContent = '● MODEL ERROR';
-  modelStatus.classList.remove('online');
-}
-
-function formatTime(totalSeconds) {
-  const seconds = Math.max(0, Math.ceil(totalSeconds));
-  const minutes = Math.floor(seconds / 60);
-  const remainder = seconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
-}
-
-const stages = [
-  { at: 0.00, title: 'Initializing pipeline…', detail: 'Preparing image sequence and camera solution', buzz: ['Pipeline queued', 'Camera calibration', 'Feature extraction'] },
-  { at: 0.10, title: 'Running photogrammetry pipeline…', detail: 'Analyzing frames and estimating camera poses', buzz: ['Frame extraction', 'Feature matching', 'Pose estimation'] },
-  { at: 0.24, title: 'Aligning camera network…', detail: 'Optimizing camera positions and scene geometry', buzz: ['Bundle adjustment', 'Tie points', 'Geometric alignment'] },
-  { at: 0.40, title: 'Generating depth maps…', detail: 'Estimating dense depth across the image sequence', buzz: ['Depth inference', 'Dense reconstruction', 'Point cloud build'] },
-  { at: 0.57, title: 'Building sparse reconstruction…', detail: 'Refining the scene structure from matched features', buzz: ['Sparse cloud', 'Outlier filtering', 'Surface estimation'] },
-  { at: 0.72, title: 'Splatting scene data…', detail: 'Preparing the reconstructed scene representation', buzz: ['Gaussian splatting', 'Geometry refinement', 'View synthesis'] },
-  { at: 0.86, title: 'Texturing reconstruction…', detail: 'Projecting source imagery onto the reconstructed surface', buzz: ['Texture projection', 'Atlas generation', 'Material baking'] },
-  { at: 0.96, title: 'Finalizing 3D output…', detail: 'Packaging optimized geometry, textures and metadata', buzz: ['Mesh optimization', 'GLB packaging', 'Final validation'] }
+const stages=[
+ {at:0,title:'Initializing pipeline…',detail:'Preparing image sequence and camera solution',buzz:['Pipeline queued','Camera calibration','Feature extraction']},
+ {at:.10,title:'Running photogrammetry pipeline…',detail:'Analyzing frames and estimating camera poses',buzz:['Frame extraction','Feature matching','Pose estimation']},
+ {at:.24,title:'Aligning camera network…',detail:'Optimizing camera positions and scene geometry',buzz:['Bundle adjustment','Tie points','Geometric alignment']},
+ {at:.40,title:'Generating depth maps…',detail:'Estimating dense depth across the image sequence',buzz:['Depth inference','Dense reconstruction','Point cloud build']},
+ {at:.57,title:'Building sparse reconstruction…',detail:'Refining scene structure from matched features',buzz:['Sparse cloud','Outlier filtering','Surface estimation']},
+ {at:.72,title:'Splatting scene data…',detail:'Preparing the reconstructed scene representation',buzz:['Gaussian splatting','Geometry refinement','View synthesis']},
+ {at:.86,title:'Texturing reconstruction…',detail:'Projecting source imagery onto the reconstructed surface',buzz:['Texture projection','Atlas generation','Material baking']},
+ {at:.96,title:'Finalizing 3D output…',detail:'Packaging optimized geometry, textures and metadata',buzz:['Mesh optimization','GLB packaging','Final validation']}
 ];
+function updateStage(progress){ let s=stages[0]; stages.forEach(x=>{if(progress>=x.at)s=x}); processingStage.textContent=s.title; processingDetail.textContent=s.detail; buzzList.innerHTML=s.buzz.map((x,i)=>`<span class="${i===0?'active':''}">${x}</span>`).join(''); }
 
-function updateStage(progress) {
-  let current = stages[0];
-  for (const stage of stages) if (progress >= stage.at) current = stage;
-  processingStage.textContent = current.title;
-  processingDetail.textContent = current.detail;
-  buzzList.innerHTML = current.buzz.map((item, i) => `<span class="${i === 0 ? 'active' : ''}">${item}</span>`).join('');
+function finishPipeline(){
+  clearInterval(countdownTimer); countdownTimer=null; processing=false; processingCompleted=true;
+  countdownEl.textContent='00:00'; progressBar.style.width='100%'; progressPercent.textContent='100%'; pipelineTime.textContent='Pipeline complete';
+  processingStage.textContent='Reconstruction complete ✓'; processingDetail.textContent='Fixed 3D reconstruction is ready to inspect and download.';
+  buzzList.innerHTML='<span class="active">Pipeline complete</span><span>Model validated</span><span>Export ready</span>';
+  if(modelLoadFailed) showModelError(); else if(modelReady) revealModel(); else showLoading('Loading final 3D reconstruction…');
+}
+function startPipeline(){
+  if(processing) return;
+  if(!videoPreview.src){ $('uploadTitle').textContent='Select a video first'; return; }
+  if(processingCompleted){ processingCompleted=false; renderer.domElement.style.visibility='hidden'; downloadBtn.hidden=true; outputPlaceholder.style.display='none'; }
+  processing=true; inputBadge.textContent='PROCESSING'; modelStatus.textContent='● PROCESSING'; modelStatus.classList.remove('online');
+  processBtn.disabled=true; processBtn.classList.add('processing'); processBtn.innerHTML='<span>◌</span> Pipeline Running…';
+  processingScreen.hidden=false; processingScreen.style.display='grid'; outputPlaceholder.style.display='none';
+  const started=performance.now(), end=started+PIPELINE_SECONDS*1000;
+  const tick=()=>{ const remaining=Math.max(0,(end-performance.now())/1000), progress=Math.min(1,(PIPELINE_SECONDS-remaining)/PIPELINE_SECONDS); countdownEl.textContent=formatTime(remaining); progressBar.style.width=`${progress*100}%`; progressPercent.textContent=`${Math.floor(progress*100)}%`; pipelineTime.textContent=`${formatTime(remaining)} remaining`; updateStage(progress); if(remaining<=0)finishPipeline(); };
+  tick(); clearInterval(countdownTimer); countdownTimer=setInterval(tick,1000);
 }
 
-function finishPipeline() {
-  if (countdownTimer) clearInterval(countdownTimer);
-  countdownTimer = null;
-  processing = false;
-  processingCompleted = true;
-  countdownEl.textContent = '00:00';
-  progressBar.style.width = '100%';
-  progressPercent.textContent = '100%';
-  pipelineTime.textContent = 'Pipeline complete';
-  processingStage.textContent = 'Reconstruction complete ✓';
-  processingDetail.textContent = 'Fixed 3D reconstruction is ready to inspect and download.';
-  buzzList.innerHTML = '<span class="active">Pipeline complete</span><span>Model validated</span><span>Export ready</span>';
-  modelStatus.textContent = modelLoadFailed ? '● MODEL ERROR' : '● FINALIZING';
-  if (modelLoadFailed) showModelError();
-  else if (modelReady) revealModel();
-  else showLoading('Loading final 3D reconstruction…');
+function handleVideo(file){
+  const valid=file && ((file.type&&file.type.startsWith('video/')) || /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(file.name));
+  if(!valid){ toast('Unsupported video','Choose an MP4, MOV, M4V or WEBM file.'); return; }
+  if(videoObjectUrl)URL.revokeObjectURL(videoObjectUrl); videoObjectUrl=URL.createObjectURL(file);
+  videoPreview.src=videoObjectUrl; videoPreview.hidden=false; videoPreview.style.display='block'; videoPreview.load(); uploadIcon.style.display='none';
+  uploadTitle.textContent=file.name; uploadMeta.textContent=`${file.type||'video'} · ${(file.size/1024/1024).toFixed(1)} MB · Preview ready`; filePill.textContent='✓ Video selected · ready for simulation';
+  inputBadge.textContent='READY'; processBtn.disabled=false; processBtn.innerHTML='<span>▶</span> Start Processing'; modelStatus.textContent='● VIDEO READY'; modelStatus.classList.add('online');
+  processingCompleted=false; downloadBtn.hidden=true; renderer.domElement.style.visibility='hidden';
+  // The upload itself is the hand-off into the simulated pipeline.
+  setTimeout(startPipeline,250);
 }
 
-function startPipeline() {
-  if (processing || processingCompleted) return;
-  processing = true;
-  processingCompleted = false;
-  countdownStartedAt = performance.now();
-  countdownEndAt = countdownStartedAt + PIPELINE_SECONDS * 1000;
-  outputPlaceholder.style.display = 'none';
-  processingScreen.hidden = false;
-  processingScreen.style.display = 'grid';
-  downloadBtn.hidden = true;
-  inputBadge.textContent = 'PROCESSING';
-  modelStatus.textContent = '● PROCESSING';
-  modelStatus.classList.remove('online');
-  processBtn.disabled = true;
-  processBtn.classList.add('processing');
-  processBtn.innerHTML = '<span>◌</span> Pipeline Running…';
-  updateStage(0);
+$('browseVideoBtn').addEventListener('click',(e)=>{e.preventDefault();e.stopPropagation(); if(!processing)videoInput.click();});
+videoInput.addEventListener('change',e=>{const f=e.target.files?.[0]; if(f)handleVideo(f); videoInput.value='';});
+uploadZone.addEventListener('click',e=>{if(e.target.closest('video')||e.target.closest('#browseVideoBtn'))return; if(!processing)videoInput.click();});
+uploadZone.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!processing){e.preventDefault();videoInput.click();}});
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('dragging');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('dragging'));
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.classList.remove('dragging');const f=[...(e.dataTransfer.files||[])].find(x=>x.type.startsWith('video/')||/\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(x.name));if(f)handleVideo(f);});
 
-  const tick = () => {
-    const remaining = Math.max(0, (countdownEndAt - performance.now()) / 1000);
-    const elapsed = PIPELINE_SECONDS - remaining;
-    const progress = Math.min(1, elapsed / PIPELINE_SECONDS);
-    countdownEl.textContent = formatTime(remaining);
-    progressBar.style.width = `${progress * 100}%`;
-    progressPercent.textContent = `${Math.floor(progress * 100)}%`;
-    pipelineTime.textContent = `${formatTime(remaining)} remaining`;
-    updateStage(progress);
-    if (remaining <= 0) finishPipeline();
-  };
-  tick();
-  countdownTimer = setInterval(tick, 1000);
+$('processBtn').addEventListener('click',()=>{ if(processing)return; if(processingCompleted){processingCompleted=false;startPipeline();} else if(videoPreview.src)startPipeline(); else videoInput.click(); });
+$('resetView').addEventListener('click',()=>{if(root)frameObject(root);toast('View reset','Camera framed to the reconstruction.');});
+$('viewHome').addEventListener('click',()=>{if(root)frameObject(root);toast('Home view','Model centered and framed.');});
+$('wireToggle').addEventListener('click',e=>{if(!root){toast('Model unavailable','The reconstruction is not ready yet.');return;}const active=e.currentTarget.classList.toggle('active');root.traverse(o=>{if(o.isMesh&&o.material)o.material.wireframe=active;});$('viewportSubtitle').textContent=active?'Perspective · Wireframe · Real-time':'Perspective · PBR material · Real-time';});
+$('gridToggle').addEventListener('click',e=>{const on=e.currentTarget.classList.toggle('active');grid.visible=on;e.currentTarget.textContent=on?'Grid':'Grid Off';});
+$('fullscreenBtn').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await viewer.requestFullscreen();else await document.exitFullscreen();}catch{toast('Fullscreen unavailable','Your browser did not allow fullscreen mode.');}});
+$('downloadBtn').addEventListener('click',e=>{if(!modelReady){e.preventDefault();toast('Model not ready','Complete the reconstruction first.');return;}toast('Export started','Downloading MeshForge-Reconstruction.glb.');});
+$('themeToggle').addEventListener('click',()=>{document.documentElement.classList.toggle('light');localStorage.setItem('meshforge-theme',document.documentElement.classList.contains('light')?'light':'dark');toast('Theme changed',document.documentElement.classList.contains('light')?'Light studio theme':'Dark studio theme');});
+if(localStorage.getItem('meshforge-theme')==='light')document.documentElement.classList.add('light');
+document.querySelectorAll('[data-toggle]').forEach(el=>el.addEventListener('click',()=>el.classList.toggle('on')));
+
+function toast(title,text){$('toastTitle').textContent=title;$('toastText').textContent=text;$('toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').hidden=true,2600);}
+
+const modal=$('modalBackdrop');
+function openModal(kicker,title,body){$('modalKicker').textContent=kicker;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;modal.hidden=false;}
+function closeModal(){modal.hidden=true;}
+$('modalClose').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+const modalViews={
+ projects:['WORKSPACE','Projects',`<div class="modal-grid"><div class="modal-card"><b>DEMO-TASK</b><small>Current reconstruction workspace · local prototype node.</small></div><div class="modal-card"><b>LAST OUTPUT</b><small>Fixed GLB reconstruction · ready after pipeline completion.</small></div><div class="modal-card"><b>SOURCE</b><small id="modalSource">No video selected.</small></div><div class="modal-card"><b>ENGINE</b><small>Three.js real-time viewport with orbit, zoom, pan and PBR lighting.</small></div></div><button class="modal-action" data-close-modal>Back to Reconstruction</button>`],
+ queue:['PROCESSING QUEUE','Processing Queue',`<div class="modal-card"><b>JOB 001 · DEMO RECONSTRUCTION</b><small id="queueStatus">Waiting for source video.</small><div class="progress-track" style="width:100%;margin-top:12px"><div class="progress-bar" id="queueProgress" style="width:0%"></div></div></div><button class="modal-action" data-close-modal>Close Queue</button>`],
+ map:['TOOLS','Map View',`<div class="map-preview"><div class="map-grid"></div><div class="route-line"></div><div class="map-pin">●</div><span class="map-label">CAPTURE AREA</span></div><div class="modal-card"><b>FLIGHT OVERVIEW</b><small>Map workspace is a visual prototype. GPS processing is not connected in demo mode.</small></div><button class="modal-action" data-close-modal>Back to Reconstruction</button>`],
+ export:['TOOLS','Export Center',`<div class="modal-grid"><div class="modal-card"><b>GLB</b><small>Binary glTF with materials and textures.</small><button class="modal-action" id="modalDownload">Download GLB</button></div><div class="modal-card"><b>STATUS</b><small id="exportStatus">Complete the simulated pipeline to enable export.</small></div></div><button class="modal-action" data-close-modal>Close Export</button>`]
+};
+function showWorkspace(name){
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.workspace===name));
+  if(name==='reconstruction'){closeModal();return;}
+  const [k,t,b]=modalViews[name]; openModal(k,t,b);
+  const source=modal.querySelector('#modalSource'); if(source)source.textContent=videoPreview.src?uploadTitle.textContent:'No video selected.';
+  if(name==='queue'){const qp=modal.querySelector('#queueProgress'),qs=modal.querySelector('#queueStatus');const timer=setInterval(()=>{if(modal.hidden){clearInterval(timer);return;}let p=processing?Math.floor((PIPELINE_SECONDS-Math.max(0,(window.__end||performance.now())))/PIPELINE_SECONDS*100):processingCompleted?100:0;qp.style.width=`${Math.max(0,Math.min(100,p))}%`;qs.textContent=processing?'Pipeline running · simulated reconstruction':processingCompleted?'Job complete · output ready':'Waiting for source video.';},500);}
+  const md=modal.querySelector('#modalDownload'); if(md)md.addEventListener('click',()=>{if(modelReady)downloadBtn.click();else toast('Export unavailable','Complete the reconstruction first.');});
+  modal.querySelector('[data-close-modal]')?.addEventListener('click',closeModal);
 }
+document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',()=>showWorkspace(btn.dataset.workspace)));
+$('projectMenuBtn').addEventListener('click',()=>showWorkspace('projects'));
+$('profileBtn').addEventListener('click',e=>{e.stopPropagation();$('profileMenu').hidden=!$('profileMenu').hidden;});document.addEventListener('click',e=>{if(!e.target.closest('.profile-wrap'))$('profileMenu').hidden=true;});$('aboutBtn').addEventListener('click',()=>{ $('profileMenu').hidden=true;openModal('MESHF0RGE','About MeshForge','<div class="modal-card"><b>3D RECONSTRUCTION STUDIO</b><small>A WebODM-inspired prototype for demonstrating a video-to-3D workflow. The reconstruction output is a fixed GLB used for the interactive viewport.</small></div>'); });
 
-document.addEventListener('video-selected', () => {
-  // Uploading a video starts the simulated reconstruction automatically.
-  startPipeline();
-});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();$('profileMenu').hidden=true;}if((e.metaKey||e.ctrlKey)&&e.key==='1')showWorkspace('reconstruction');if((e.metaKey||e.ctrlKey)&&e.key==='2')showWorkspace('projects');});
 
-document.getElementById('resetView').addEventListener('click', () => {
-  if (root) frameObject(root);
-});
-document.getElementById('wireToggle').addEventListener('click', (event) => {
-  if (!root) return;
-  const active = event.currentTarget.classList.toggle('active');
-  root.traverse((obj) => {
-    if (obj.isMesh && obj.material) obj.material.wireframe = active;
-  });
-});
-document.getElementById('fullscreenBtn').addEventListener('click', () => viewer.requestFullscreen?.());
-document.getElementById('themeToggle').addEventListener('click', () => document.documentElement.classList.toggle('light'));
-document.querySelectorAll('[data-toggle]').forEach((el) => el.addEventListener('click', () => el.classList.toggle('on')));
-
-processBtn.addEventListener('click', () => {
-  if (!processing && !processingCompleted) {
-    const input = document.getElementById('videoInput');
-    input?.click();
-  }
-});
-
-function resize() {
-  const w = viewer.clientWidth || 800;
-  const h = viewer.clientHeight || 600;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h, false);
-}
-new ResizeObserver(resize).observe(viewer);
-resize();
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
+function resize(){const w=viewer.clientWidth||800,h=viewer.clientHeight||600;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);}new ResizeObserver(resize).observe(viewer);resize();
+(function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);})();
