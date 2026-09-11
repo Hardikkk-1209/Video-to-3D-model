@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeshForge — Video to 3D</title>
+  <meta name="description" content="Futuristic WebODM-inspired video to 3D model prototype." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">M</span><span>MeshForge</span></div>
+      <div class="sidebar-section">
+        <div class="section-label">WORKSPACE</div>
+        <button class="nav-item active"><span>▣</span> Reconstruction</button>
+        <button class="nav-item"><span>◈</span> Projects</button>
+        <button class="nav-item"><span>⌁</span> Processing Queue</button>
+      </div>
+      <div class="sidebar-section">
+        <div class="section-label">TOOLS</div>
+        <button class="nav-item"><span>◌</span> Map View</button>
+        <button class="nav-item"><span>◇</span> Export</button>
+      </div>
+      <div class="sidebar-footer">
+        <div class="status-dot"></div>
+        <div><strong>Prototype node</strong><small>simulation online</small></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">PROJECT / DEMO-TASK</div>
+          <h1>Video Reconstruction Studio</h1>
+        </div>
+        <div class="top-actions">
+          <span class="chip">WEBODM MODE</span>
+          <button id="themeToggle" class="icon-btn" title="Toggle theme">☼</button>
+          <button class="avatar">H</button>
+        </div>
+      </header>
+
+      <section class="workspace-grid">
+        <section class="panel controls-panel">
+          <div class="panel-header"><div><div class="panel-kicker">01 / INPUT</div><h2>Capture source</h2></div><span class="badge">READY</span></div>
+          <label class="upload-zone" for="videoInput">
+            <input id="videoInput" type="file" accept="video/*" hidden />
+            <div class="upload-icon">↑</div>
+            <strong id="uploadTitle">Drop flight video here</strong>
+            <span id="uploadMeta">or click to browse · MP4, MOV, WEBM</span>
+            <div class="file-pill" id="filePill">No file selected</div>
+          </label>
+
+          <div class="panel-header compact"><div><div class="panel-kicker">02 / PARAMETERS</div><h2>Processing options</h2></div><span class="tiny-status">SIMULATED</span></div>
+          <div class="param-list">
+            <label class="param-row"><span><b>Camera model</b><small>Sensor / lens profile</small></span><select><option>Auto detected</option><option>DJI Mavic 3</option><option>Generic 24mm</option></select></label>
+            <label class="param-row"><span><b>Iterations</b><small>Optimization passes</small></span><input id="iterations" type="number" value="15000" min="1000" max="50000" step="500" /></label>
+            <label class="param-row"><span><b>Feature quality</b><small>Keypoint density</small></span><select><option>High</option><option>Medium</option><option>Ultra</option></select></label>
+            <label class="param-row"><span><b>Resize images</b><small>Input resolution scaling</small></span><select><option>No</option><option>2048 px</option><option>1024 px</option></select></label>
+            <label class="param-row"><span><b>Depth refinement</b><small>Surface precision</small></span><div class="switch on" data-toggle><i></i></div></label>
+            <label class="param-row"><span><b>Texture atlas</b><small>Material detail</small></span><div class="switch on" data-toggle><i></i></div></label>
+          </div>
+          <button id="processBtn" class="primary-btn"><span>▶</span> Start Processing</button>
+          <div class="process-note"><span class="pulse"></span> Demo mode: parameters are interactive, output is a fixed reconstruction.</div>
+        </section>
+
+        <section class="viewer-panel">
+          <div class="viewer-toolbar">
+            <div><div class="panel-kicker">03 / OUTPUT</div><h2>Reconstruction viewport</h2></div>
+            <div class="viewer-tools"><button id="resetView">Reset</button><button id="wireToggle">Wireframe</button><button id="fullscreenBtn">Fullscreen</button></div>
+          </div>
+          <div id="viewer" class="viewer"><div class="loading"><div class="spinner"></div><span>Initializing 3D viewport…</span></div></div>
+          <div class="viewer-hints"><span>Drag · Orbit</span><span>Scroll · Zoom</span><span>Shift + Drag · Pan</span><span>Double-click · Focus</span></div>
+          <div class="output-footer">
+            <div><span class="metric-label">MODEL</span><strong>Fixed demo reconstruction</strong></div>
+            <div><span class="metric-label">FORMAT</span><strong>GLB · 4K textures</strong></div>
+            <div><span class="metric-label">STATUS</span><strong class="online">● VIEW READY</strong></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
