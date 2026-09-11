@@ -1,8 +1,8 @@
-// Reliable video picker/preview layer.
-// Kept separate from the Three.js module so video selection works even if the 3D CDN is slow.
+// Reliable native file-picker + drag/drop layer for the video input.
 (() => {
   const zone = document.getElementById('uploadZone');
   const input = document.getElementById('videoInput');
+  const browse = document.getElementById('browseVideoBtn');
   const preview = document.getElementById('videoPreview');
   const icon = document.getElementById('uploadIcon');
   const title = document.getElementById('uploadTitle');
@@ -10,20 +10,19 @@
   const pill = document.getElementById('filePill');
   const status = document.getElementById('modelStatus');
 
-  if (!zone || !input || !preview) return;
-
-  // The existing CSS sets .video-preview to display:block, which overrides [hidden].
-  // Force the preview to stay invisible until an actual file is selected.
-  preview.style.display = 'none';
+  if (!zone || !input || !browse || !preview) return;
 
   let objectUrl = null;
 
-  const isVideo = (file) => file && (file.type.startsWith('video/') || /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(file.name));
+  const isVideo = (file) => file && (
+    (file.type && file.type.startsWith('video/')) ||
+    /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(file.name)
+  );
 
   function showVideo(file) {
     if (!isVideo(file)) {
       title.textContent = 'Unsupported file';
-      meta.textContent = 'Please choose an MP4, MOV or WEBM video.';
+      meta.textContent = 'Please choose an MP4, MOV, M4V or WEBM video.';
       return;
     }
 
@@ -43,13 +42,20 @@
     status.classList.add('online');
   }
 
-  // Capture-phase handler prevents the old upload-zone handler from opening the picker twice.
-  zone.addEventListener('click', (event) => {
-    if (event.target.closest('video')) return;
+  // Dedicated native button. Because the input.click() is directly inside
+  // the user's button click, Chrome/Safari will open the OS file chooser.
+  browse.addEventListener('click', (event) => {
     event.preventDefault();
-    event.stopImmediatePropagation();
+    event.stopPropagation();
     input.click();
-  }, true);
+  });
+
+  // Clicking the upload area also opens the native chooser, except on the
+  // video preview and the dedicated button.
+  zone.addEventListener('click', (event) => {
+    if (event.target.closest('video') || event.target.closest('#browseVideoBtn')) return;
+    input.click();
+  });
 
   zone.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -75,7 +81,7 @@
   input.addEventListener('change', (event) => {
     const file = event.target.files?.[0];
     if (file) showVideo(file);
-    // Allows selecting the same file again later.
+    // Allow selecting the same file again.
     input.value = '';
   });
 })();
