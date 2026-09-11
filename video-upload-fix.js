@@ -1,4 +1,4 @@
-// Reliable native file-picker + drag/drop layer for the video input.
+// Native video picker and drag/drop layer.
 (() => {
   const zone = document.getElementById('uploadZone');
   const input = document.getElementById('videoInput');
@@ -28,30 +28,26 @@
 
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(file);
-
     preview.src = objectUrl;
     preview.hidden = false;
     preview.style.display = 'block';
     preview.load();
-
     icon.style.display = 'none';
     title.textContent = file.name;
     meta.textContent = `${file.type || 'video'} · ${(file.size / 1024 / 1024).toFixed(1)} MB · Preview ready`;
-    pill.textContent = '✓ Video selected · ready for simulation';
-    status.textContent = '● VIDEO READY';
+    pill.textContent = '✓ Video selected · pipeline starting';
+    status.textContent = '● QUEUED';
     status.classList.add('online');
+
+    document.dispatchEvent(new CustomEvent('video-selected', { detail: { file } }));
   }
 
-  // Dedicated native button. Because the input.click() is directly inside
-  // the user's button click, Chrome/Safari will open the OS file chooser.
   browse.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
     input.click();
   });
 
-  // Clicking the upload area also opens the native chooser, except on the
-  // video preview and the dedicated button.
   zone.addEventListener('click', (event) => {
     if (event.target.closest('video') || event.target.closest('#browseVideoBtn')) return;
     input.click();
@@ -81,7 +77,6 @@
   input.addEventListener('change', (event) => {
     const file = event.target.files?.[0];
     if (file) showVideo(file);
-    // Allow selecting the same file again.
     input.value = '';
   });
 })();
