@@ -4,7 +4,17 @@ import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/examples/
 import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/environments/RoomEnvironment.js';
 
 const viewer = document.getElementById('viewer');
-const loading = viewer.querySelector('.loading');
+const modelLoading = document.getElementById('modelLoading');
+const outputPlaceholder = document.getElementById('outputPlaceholder');
+const modelStatus = document.getElementById('modelStatus');
+const uploadZone = document.getElementById('uploadZone');
+const videoInput = document.getElementById('videoInput');
+const videoPreview = document.getElementById('videoPreview');
+const uploadIcon = document.getElementById('uploadIcon');
+const uploadTitle = document.getElementById('uploadTitle');
+const uploadMeta = document.getElementById('uploadMeta');
+const filePill = document.getElementById('filePill');
+const processBtn = document.getElementById('processBtn');
 const modelUrl = 'model1.glb';
 
 const scene = new THREE.Scene();
@@ -17,6 +27,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 viewer.appendChild(renderer.domElement);
+renderer.domElement.style.visibility = 'hidden';
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -45,6 +56,10 @@ rim.position.set(-4, 3, -2);
 scene.add(rim);
 
 let root = null;
+let modelReady = false;
+let processing = false;
+let videoObjectUrl = null;
+
 const loader = new GLTFLoader();
 loader.load(modelUrl, (gltf) => {
   root = gltf.scene;
@@ -57,9 +72,12 @@ loader.load(modelUrl, (gltf) => {
   });
   scene.add(root);
   frameObject(root);
-  loading.remove();
+  modelReady = true;
+  if (processing) revealModel();
 }, undefined, () => {
-  loading.innerHTML = '<div class="spinner"></div><span>Model file missing — put model1.glb beside index.html.</span>';
+  outputPlaceholder.querySelector('strong').textContent = '3D model not found';
+  outputPlaceholder.querySelector('span').textContent = 'Place model1.glb in the same folder as index.html and refresh the page.';
+  modelStatus.textContent = '● MODEL MISSING';
 });
 
 function frameObject(object) {
@@ -80,6 +98,15 @@ function frameObject(object) {
   grid.position.y = box.min.y;
 }
 
+function revealModel() {
+  if (!modelReady) return;
+  modelLoading.hidden = true;
+  outputPlaceholder.style.display = 'none';
+  renderer.domElement.style.visibility = 'visible';
+  modelStatus.textContent = '● VIEW READY';
+  modelStatus.classList.add('online');
+}
+
 function resize() {
   const w = viewer.clientWidth || 800;
   const h = viewer.clientHeight || 600;
@@ -97,32 +124,98 @@ function animate() {
 }
 animate();
 
-document.getElementById('resetView').addEventListener('click', () => { if (root) frameObject(root); });
-document.getElementById('wireToggle').addEventListener('click', (e) => {
-  if (!root) return;
-  const active = e.currentTarget.classList.toggle('active');
-  root.traverse((o) => { if (o.isMesh && o.material) o.material.wireframe = active; });
+document.getElementById('resetView').addEventListener('click', () => {
+  if (root) frameObject(root);
 });
+
+document.getElementById('wireToggle').addEventListener('click', (event) => {
+  if (!root) return;
+  const active = event.currentTarget.classList.toggle('active');
+  root.traverse((obj) => {
+    if (obj.isMesh && obj.material) obj.material.wireframe = active;
+  });
+});
+
 document.getElementById('fullscreenBtn').addEventListener('click', () => viewer.requestFullscreen?.());
 document.getElementById('themeToggle').addEventListener('click', () => document.documentElement.classList.toggle('light'));
-
 document.querySelectorAll('[data-toggle]').forEach((el) => el.addEventListener('click', () => el.classList.toggle('on')));
 
-document.getElementById('videoInput').addEventListener('change', (event) => {
-  const file = event.target.files?.[0];
-  const title = document.getElementById('uploadTitle');
-  const meta = document.getElementById('uploadMeta');
-  const pill = document.getElementById('filePill');
-  if (!file) return;
-  title.textContent = file.name;
-  meta.textContent = `${file.type || 'video'} · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
-  pill.textContent = 'Selected · ready for simulation';
+function openVideoPicker() {
+  if (!processing) videoInput.click();
+}
+
+uploadZone.addEventListener('click', (event) => {
+  if (event.target.closest('video')) return;
+  openVideoPicker();
 });
 
-document.getElementById('processBtn').addEventListener('click', (event) => {
-  const btn = event.currentTarget;
-  const original = btn.innerHTML;
-  btn.classList.add('processing');
-  btn.innerHTML = '<span>◌</span> Simulating processing…';
-  setTimeout(() => { btn.classList.remove('processing'); btn.innerHTML = '<span>✓</span> Fixed model loaded'; setTimeout(() => btn.innerHTML = original, 1800); }, 1200);
+uploadZone.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    openVideoPicker();
+  }
+});
+
+uploadZone.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  uploadZone.classList.add('dragging');
+});
+
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragging'));
+
+uploadZone.addEventListener('drop', (event) => {
+  event.preventDefault();
+  uploadZone.classList.remove('dragging');
+  const file = [...(event.dataTransfer.files || [])].find((item) => item.type.startsWith('video/'));
+  if (file) handleVideo(file);
+});
+
+videoInput.addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  if (file) handleVideo(file);
+});
+
+function handleVideo(file) {
+  if (!file.type.startsWith('video/')) return;
+  if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+  videoObjectUrl = URL.createObjectURL(file);
+  videoPreview.src = videoObjectUrl;
+  videoPreview.hidden = false;
+  uploadIcon.style.display = 'none';
+  uploadTitle.textContent = file.name;
+  uploadMeta.textContent = `${file.type || 'video'} · ${(file.size / 1024 / 1024).toFixed(1)} MB · Preview ready`;
+  filePill.textContent = '✓ Video selected · ready for simulation';
+  modelStatus.textContent = '● VIDEO READY';
+  modelStatus.classList.add('online');
+}
+
+processBtn.addEventListener('click', () => {
+  if (processing) return;
+  if (!videoPreview.src) {
+    uploadTitle.textContent = 'Select a video first';
+    uploadMeta.textContent = 'Choose an MP4, MOV or WEBM flight video to continue.';
+    uploadZone.classList.add('error');
+    setTimeout(() => uploadZone.classList.remove('error'), 900);
+    return;
+  }
+
+  processing = true;
+  processBtn.disabled = true;
+  processBtn.classList.add('processing');
+  processBtn.innerHTML = '<span>◌</span> Processing reconstruction…';
+  modelStatus.textContent = '● PROCESSING';
+  modelStatus.classList.remove('online');
+  outputPlaceholder.style.display = 'none';
+  modelLoading.hidden = false;
+
+  setTimeout(() => {
+    if (modelReady) revealModel();
+    processing = false;
+    processBtn.disabled = false;
+    processBtn.classList.remove('processing');
+    processBtn.innerHTML = '<span>✓</span> 3D Model Ready';
+    setTimeout(() => {
+      processBtn.innerHTML = '<span>▶</span> Start Processing';
+    }, 2200);
+  }, 1800);
 });
