@@ -64,13 +64,24 @@ let videoObjectUrl = null;
 
 const loader = new GLTFLoader();
 
+function hideLoading() {
+  modelLoading.hidden = true;
+  modelLoading.style.display = 'none';
+}
+
+function showLoading(message = 'Loading fixed 3D reconstruction…') {
+  modelLoading.hidden = false;
+  modelLoading.style.display = 'grid';
+  modelLoading.querySelector('span').textContent = message;
+}
+
 function showModelError() {
   modelLoadFailed = true;
-  modelLoading.hidden = true;
+  hideLoading();
   renderer.domElement.style.visibility = 'hidden';
   outputPlaceholder.style.display = 'grid';
   outputPlaceholder.querySelector('strong').textContent = '3D model could not be loaded';
-  outputPlaceholder.querySelector('span').textContent = 'Make sure model1.glb is in the same folder as index.html, then refresh the page.';
+  outputPlaceholder.querySelector('span').textContent = 'model1.glb was not found or could not be read. Check that it is beside index.html.';
   modelStatus.textContent = '● MODEL ERROR';
   modelStatus.classList.remove('online');
 }
@@ -87,9 +98,6 @@ loader.load(modelUrl, (gltf) => {
   scene.add(root);
   frameObject(root);
   modelReady = true;
-
-  // The GLB can take longer than the simulated processing delay to download.
-  // Reveal it as soon as both processing has completed and the model has loaded.
   if (processingCompleted) revealModel();
 }, undefined, (error) => {
   console.error('Failed to load model1.glb:', error);
@@ -116,7 +124,7 @@ function frameObject(object) {
 
 function revealModel() {
   if (!modelReady || !processingCompleted) return;
-  modelLoading.hidden = true;
+  hideLoading();
   outputPlaceholder.style.display = 'none';
   renderer.domElement.style.visibility = 'visible';
   modelStatus.textContent = '● VIEW READY';
@@ -197,6 +205,7 @@ function handleVideo(file) {
   videoObjectUrl = URL.createObjectURL(file);
   videoPreview.src = videoObjectUrl;
   videoPreview.hidden = false;
+  videoPreview.style.display = 'block';
   uploadIcon.style.display = 'none';
   uploadTitle.textContent = file.name;
   uploadMeta.textContent = `${file.type || 'video'} · ${(file.size / 1024 / 1024).toFixed(1)} MB · Preview ready`;
@@ -223,13 +232,11 @@ processBtn.addEventListener('click', () => {
   modelStatus.textContent = '● PROCESSING';
   modelStatus.classList.remove('online');
   outputPlaceholder.style.display = 'none';
-  modelLoading.hidden = false;
+  showLoading('Processing reconstruction…');
 
-  // Simulated processing. The fixed GLB is the actual output.
   setTimeout(() => {
     processingCompleted = true;
     processing = false;
-
     processBtn.disabled = false;
     processBtn.classList.remove('processing');
     processBtn.innerHTML = '<span>✓</span> 3D Model Ready';
@@ -239,8 +246,7 @@ processBtn.addEventListener('click', () => {
     } else if (modelReady) {
       revealModel();
     } else {
-      modelLoading.hidden = false;
-      modelLoading.querySelector('span').textContent = 'Loading fixed 3D reconstruction…';
+      showLoading('Loading fixed 3D reconstruction…');
       modelStatus.textContent = '● LOADING MODEL';
     }
 
