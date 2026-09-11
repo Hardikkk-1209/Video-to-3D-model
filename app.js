@@ -57,10 +57,24 @@ scene.add(rim);
 
 let root = null;
 let modelReady = false;
+let modelLoadFailed = false;
 let processing = false;
+let processingCompleted = false;
 let videoObjectUrl = null;
 
 const loader = new GLTFLoader();
+
+function showModelError() {
+  modelLoadFailed = true;
+  modelLoading.hidden = true;
+  renderer.domElement.style.visibility = 'hidden';
+  outputPlaceholder.style.display = 'grid';
+  outputPlaceholder.querySelector('strong').textContent = '3D model could not be loaded';
+  outputPlaceholder.querySelector('span').textContent = 'Make sure model1.glb is in the same folder as index.html, then refresh the page.';
+  modelStatus.textContent = '● MODEL ERROR';
+  modelStatus.classList.remove('online');
+}
+
 loader.load(modelUrl, (gltf) => {
   root = gltf.scene;
   root.traverse((obj) => {
@@ -73,11 +87,13 @@ loader.load(modelUrl, (gltf) => {
   scene.add(root);
   frameObject(root);
   modelReady = true;
-  if (processing) revealModel();
-}, undefined, () => {
-  outputPlaceholder.querySelector('strong').textContent = '3D model not found';
-  outputPlaceholder.querySelector('span').textContent = 'Place model1.glb in the same folder as index.html and refresh the page.';
-  modelStatus.textContent = '● MODEL MISSING';
+
+  // The GLB can take longer than the simulated processing delay to download.
+  // Reveal it as soon as both processing has completed and the model has loaded.
+  if (processingCompleted) revealModel();
+}, undefined, (error) => {
+  console.error('Failed to load model1.glb:', error);
+  showModelError();
 });
 
 function frameObject(object) {
@@ -99,7 +115,7 @@ function frameObject(object) {
 }
 
 function revealModel() {
-  if (!modelReady) return;
+  if (!modelReady || !processingCompleted) return;
   modelLoading.hidden = true;
   outputPlaceholder.style.display = 'none';
   renderer.domElement.style.visibility = 'visible';
@@ -200,6 +216,7 @@ processBtn.addEventListener('click', () => {
   }
 
   processing = true;
+  processingCompleted = false;
   processBtn.disabled = true;
   processBtn.classList.add('processing');
   processBtn.innerHTML = '<span>◌</span> Processing reconstruction…';
@@ -208,14 +225,27 @@ processBtn.addEventListener('click', () => {
   outputPlaceholder.style.display = 'none';
   modelLoading.hidden = false;
 
+  // Simulated processing. The fixed GLB is the actual output.
   setTimeout(() => {
-    if (modelReady) revealModel();
+    processingCompleted = true;
     processing = false;
+
     processBtn.disabled = false;
     processBtn.classList.remove('processing');
     processBtn.innerHTML = '<span>✓</span> 3D Model Ready';
+
+    if (modelLoadFailed) {
+      showModelError();
+    } else if (modelReady) {
+      revealModel();
+    } else {
+      modelLoading.hidden = false;
+      modelLoading.querySelector('span').textContent = 'Loading fixed 3D reconstruction…';
+      modelStatus.textContent = '● LOADING MODEL';
+    }
+
     setTimeout(() => {
-      processBtn.innerHTML = '<span>▶</span> Start Processing';
+      if (!processing) processBtn.innerHTML = '<span>▶</span> Start Processing';
     }, 2200);
   }, 1800);
 });
