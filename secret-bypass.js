@@ -42,8 +42,14 @@
       window.__meshforgeBypass = true;
       window.__pipelineProgress = 1;
 
-      // Ask the existing countdown tick to finish immediately.
-      // The app stores its deadline on window.__pipelineEnd.
+      // Prefer the real pipeline completion hook so internal state is cleared too.
+      if (typeof window.__meshforgeFinishPipeline === 'function') {
+        window.__meshforgeFinishPipeline();
+        button.hidden = true;
+        return;
+      }
+
+      // Compatibility fallback for an older cached app.js.
       const deadline = window.__pipelineEnd;
       if (Number.isFinite(deadline)) {
         try {
@@ -59,7 +65,6 @@
         } catch {}
       }
 
-      // Visual fallback: reveal the already-loaded fixed model immediately.
       setTimeout(() => {
         screen.hidden = true;
         screen.style.display = 'none';
