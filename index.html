@@ -7,7 +7,7 @@
   <meta name="description" content="Futuristic WebODM-inspired video to 3D model prototype." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -47,12 +47,13 @@
       <section class="workspace-grid">
         <section class="panel controls-panel">
           <div class="panel-header"><div><div class="panel-kicker">01 / INPUT</div><h2>Capture source</h2></div><span class="badge">READY</span></div>
-          <div class="upload-zone" id="uploadZone" role="button" tabindex="0">
+          <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Choose flight video">
             <input id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v,.webm" hidden />
             <div class="upload-icon" id="uploadIcon">↑</div>
             <video id="videoPreview" class="video-preview" controls muted playsinline hidden></video>
             <strong id="uploadTitle">Drop flight video here</strong>
             <span id="uploadMeta">or click to browse · MP4, MOV, WEBM</span>
+            <button type="button" class="browse-btn" id="browseVideoBtn">Choose Video</button>
             <div class="file-pill" id="filePill">No file selected</div>
           </div>
 
