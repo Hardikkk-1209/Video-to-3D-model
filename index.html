@@ -47,13 +47,14 @@
       <section class="workspace-grid">
         <section class="panel controls-panel">
           <div class="panel-header"><div><div class="panel-kicker">01 / INPUT</div><h2>Capture source</h2></div><span class="badge">READY</span></div>
-          <label class="upload-zone" for="videoInput">
+          <div class="upload-zone" id="uploadZone" role="button" tabindex="0">
             <input id="videoInput" type="file" accept="video/*" hidden />
-            <div class="upload-icon">↑</div>
+            <div class="upload-icon" id="uploadIcon">↑</div>
+            <video id="videoPreview" class="video-preview" controls muted playsinline hidden></video>
             <strong id="uploadTitle">Drop flight video here</strong>
             <span id="uploadMeta">or click to browse · MP4, MOV, WEBM</span>
             <div class="file-pill" id="filePill">No file selected</div>
-          </label>
+          </div>
 
           <div class="panel-header compact"><div><div class="panel-kicker">02 / PARAMETERS</div><h2>Processing options</h2></div><span class="tiny-status">SIMULATED</span></div>
           <div class="param-list">
@@ -65,7 +66,7 @@
             <label class="param-row"><span><b>Texture atlas</b><small>Material detail</small></span><div class="switch on" data-toggle><i></i></div></label>
           </div>
           <button id="processBtn" class="primary-btn"><span>▶</span> Start Processing</button>
-          <div class="process-note"><span class="pulse"></span> Demo mode: parameters are interactive, output is a fixed reconstruction.</div>
+          <div class="process-note"><span class="pulse"></span> Demo mode: video and parameters are interactive; output is a fixed reconstruction.</div>
         </section>
 
         <section class="viewer-panel">
@@ -73,12 +74,19 @@
             <div><div class="panel-kicker">03 / OUTPUT</div><h2>Reconstruction viewport</h2></div>
             <div class="viewer-tools"><button id="resetView">Reset</button><button id="wireToggle">Wireframe</button><button id="fullscreenBtn">Fullscreen</button></div>
           </div>
-          <div id="viewer" class="viewer"><div class="loading"><div class="spinner"></div><span>Initializing 3D viewport…</span></div></div>
-          <div class="viewer-hints"><span>Drag · Orbit</span><span>Scroll · Zoom</span><span>Shift + Drag · Pan</span><span>Double-click · Focus</span></div>
+          <div id="viewer" class="viewer">
+            <div class="output-placeholder" id="outputPlaceholder">
+              <div class="placeholder-icon">◇</div>
+              <strong>3D output is waiting</strong>
+              <span>Upload a flight video, configure the parameters, then start processing.</span>
+            </div>
+            <div class="loading" id="modelLoading" hidden><div class="spinner"></div><span>Loading fixed reconstruction…</span></div>
+          </div>
+          <div class="viewer-hints"><span>Drag · Orbit 360°</span><span>Scroll · Zoom</span><span>Shift + Drag · Pan</span><span>Double-click · Focus</span></div>
           <div class="output-footer">
             <div><span class="metric-label">MODEL</span><strong>Fixed demo reconstruction</strong></div>
             <div><span class="metric-label">FORMAT</span><strong>GLB · 4K textures</strong></div>
-            <div><span class="metric-label">STATUS</span><strong class="online">● VIEW READY</strong></div>
+            <div><span class="metric-label">STATUS</span><strong class="online" id="modelStatus">● WAITING</strong></div>
           </div>
         </section>
       </section>
