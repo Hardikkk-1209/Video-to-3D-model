@@ -48,7 +48,7 @@
         <section class="panel controls-panel">
           <div class="panel-header"><div><div class="panel-kicker">01 / INPUT</div><h2>Capture source</h2></div><span class="badge">READY</span></div>
           <div class="upload-zone" id="uploadZone" role="button" tabindex="0">
-            <input id="videoInput" type="file" accept="video/*" hidden />
+            <input id="videoInput" type="file" accept="video/*,.mov,.mp4,.m4v,.webm" hidden />
             <div class="upload-icon" id="uploadIcon">↑</div>
             <video id="videoPreview" class="video-preview" controls muted playsinline hidden></video>
             <strong id="uploadTitle">Drop flight video here</strong>
@@ -93,6 +93,7 @@
     </main>
   </div>
 
+  <script src="video-upload-fix.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
